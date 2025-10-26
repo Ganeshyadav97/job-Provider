@@ -58,6 +58,7 @@ const GetallUsers=async(req,res)=>{
     } */
 const CreateCompany=async(req,res)=>{
     const{name,email,password,location}=req.body;
+        console.log(email,password);
     if(!name||!email||!password||!location){
         req.status(401).json({message:"Provide all the details correctly"})
     }
