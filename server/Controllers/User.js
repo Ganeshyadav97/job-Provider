@@ -56,20 +56,20 @@ const Login=async(req,res)=>{
 }
 
 const ADMIN_EMAIL = "admin@example.com";
-const ADMIN_PASSWORD= "admin123"; // bcrypt hash of 'admin123'
+const ADMIN_PASSWORD = "admin123";
 
-const AdminAuth=async(req,res)=> {
+const AdminAuth = async (req, res) => {
   const { email, password } = req.body;
-  
-  if (email !== ADMIN_EMAIL) return res.status(401).json({ message: "Invalid email or password" });
-  const ADMIN_PASSWORD_HASH=await bcrypt.hash(ADMIN_PASSWORD, 10)
-  const isMatch = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
-  if (!isMatch) return res.status(401).json({ message: "Invalid password" });
+
+  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ message: "Invalid email or password" });
+  }
 
   const token = jwt.sign({ email: ADMIN_EMAIL }, "MY_SECRET_KEY", { expiresIn: "1d" });
   res.json({ token, email: ADMIN_EMAIL });
-  console.log(token)
+  console.log("Admin Token:", token);
 };
+
 const CompanyAuth=async(req,res)=>{
     const {email,password}=req.body;
     if (!email || !password) {
