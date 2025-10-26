@@ -27,6 +27,7 @@ const AdminDashboard = () => {
           return;
         }
         payload = { name: companyName, email, password, location };
+        console.log(payload);
       }
 
       await axios.post(`https://job-poster-1.onrender.com/admin/create${role}`, payload, {
