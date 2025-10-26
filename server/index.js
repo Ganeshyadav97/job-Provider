@@ -6,6 +6,11 @@ const admin=require('./routes/admin')
 const CompanyJob=require('./routes/Company')
 const UserApply=require('./routes/User')
 const app = express();
+app.use(cors({
+  origin: ['https://job-poster-kft5.vercel.app'], // your frontend domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
 // Middleware
 app.use(express.json()); // to parse JSON bodies
