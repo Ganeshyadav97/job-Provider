@@ -12,7 +12,7 @@ const UserDashboard = () => {
   // Fetch all jobs
   const fetchJobs = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/user/getjobs', {
+      const res = await axios.get('https://job-poster-1.onrender.com/user/getjobs', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setJobs(res.data);
@@ -24,7 +24,7 @@ const UserDashboard = () => {
   // Fetch applications of logged-in user
   const fetchApplications = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/user/applications', {
+      const res = await axios.get('https://job-poster-1.onrender.com/user/applications', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setApplications(res.data);
