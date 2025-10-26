@@ -1,31 +1,34 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const auth=require('./routes/auth')
-const admin=require('./routes/admin')
-const CompanyJob=require('./routes/Company')
-const UserApply=require('./routes/User')
+const auth = require('./routes/auth');
+const admin = require('./routes/admin');
+const CompanyJob = require('./routes/Company');
+const UserApply = require('./routes/User');
+
 const app = express();
+
+// ✅ Allow frontend domain (Vercel)
 app.use(cors({
-  origin: ['https://job-poster-kft5.vercel.app'], // your frontend domain
+  origin: ['https://job-poster-kft5.vercel.app'], // your Vercel frontend
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
 
-// Middleware
-app.use(express.json()); // to parse JSON bodies
-app.use(cors());         // enable CORS
+// ✅ Parse JSON bodies
+app.use(express.json());
 
-// Routess
-app.use("/auth",auth);
-app.use("/admin",admin);
-app.use("/company",CompanyJob)
-app.use("/user",UserApply);
-// Connect to MongoDB
+// ✅ Routes
+app.use("/auth", auth);
+app.use("/admin", admin);
+app.use("/company", CompanyJob);
+app.use("/user", UserApply);
+
+// ✅ Connect to MongoDB
 mongoose
   .connect("mongodb+srv://kanneboina:nani@cluster0.wl6wuhf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Start server
+// ✅ Start server
 app.listen(5000, () => console.log("Server running on port 5000..."));
