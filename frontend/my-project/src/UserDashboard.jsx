@@ -24,7 +24,7 @@ const UserDashboard = () => {
   // Fetch applications of logged-in user
   const fetchApplications = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/user/applications', {
+      const res = await axios.get('http://localhost:5000/applications', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setApplications(res.data);

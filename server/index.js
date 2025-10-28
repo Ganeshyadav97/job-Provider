@@ -18,7 +18,7 @@ app.use("/company",CompanyJob)
 app.use("/user",UserApply);
 // Connect to MongoDB
 mongoose
-  .connect("mongodb+srv://kanneboina:nani@cluster0.wl6wuhf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+  .connect("mongodb+srv://kanneboina:nani@cluster0.wl6wuhf.mongodb.net/?appName=Cluster0")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
