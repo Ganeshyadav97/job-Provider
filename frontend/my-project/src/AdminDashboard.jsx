@@ -27,9 +27,10 @@ const AdminDashboard = () => {
           return;
         }
         payload = { name: companyName, email, password, location };
+        console.log(payload);
       }
 
-      await axios.post(`http://localhost:5000/admin/create${role}`, payload, {
+      await axios.post(`https://job-poster-1.onrender.com/admin/create${role}`, payload, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
 

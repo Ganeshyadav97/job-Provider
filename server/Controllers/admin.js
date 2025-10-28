@@ -56,20 +56,36 @@ const GetallUsers=async(req,res)=>{
 /*if(!name||!email||!password||!location){
         req.status(401).json({message:"Provide all the details correctly"})
     } */
-const CreateCompany=async(req,res)=>{
-    const{name,email,password,location}=req.body;
-    if(!name||!email||!password||!location){
-        req.status(401).json({message:"Provide all the details correctly"})
-    }
-    const existingUser=await Company.findOne({email})
-    if (existingUser) return res.status(400).json({ message: 'Company already exists' });
+const CreateCompany = async (req, res) => {
+  try {
+    const { name, email, password, location } = req.body;
+    console.log(email, password);
 
+    // Validate all fields
+    if (!name || !email || !password || !location) {
+      return res.status(400).json({ message: "Provide all the details correctly" });
+    }
+
+    // Check if company already exists
+    const existingCompany = await Company.findOne({ email });
+    if (existingCompany) {
+      return res.status(400).json({ message: "Company already exists" });
+    }
+
+    // Hash password
     const hashed = await bcrypt.hash(password, 10);
+
+    // Save company
     const company = new Company({ name, email, password: hashed, location });
     await company.save();
-    res.status(201).json({ message: "company registered successfully" });
 
-}
+    res.status(201).json({ message: "Company registered successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 const GetallCompanys=async (req, res)=>{
   const companies = await Company.find();
   res.json(companies);

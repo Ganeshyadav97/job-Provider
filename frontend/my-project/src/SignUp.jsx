@@ -13,7 +13,7 @@ const SignUp = () => {
     setErr("")
     setLoading(true)
     try {
-      await axios.post("http://localhost:5000/auth/user/signup", { email, password })
+      await axios.post("https://job-poster-1.onrender.com/auth/user/signup", { email, password })
       navigate('/login')
       console.log(email, password)
     } catch (err) {

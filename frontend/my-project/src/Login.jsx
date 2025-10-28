@@ -14,7 +14,7 @@ const Login = () => {
     setError("")
     setLoading(true)
     try {
-      const res = await axios.post(`http://localhost:5000/auth/${role}/login`, { email, password })
+      const res = await axios.post(`https://job-poster-1.onrender.com/auth/${role}/login`, { email, password })
       localStorage.setItem("token", res.data.token)
       alert(`${role} login successful!`)
       navigate(`/${role}-dashboard`)
