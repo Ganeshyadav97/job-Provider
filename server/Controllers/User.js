@@ -2,12 +2,46 @@ const User=require("../models/User");
 const bcrypt=require("bcryptjs");
 const jwt=require("jsonwebtoken");
 const Company = require("../models/Company");
-const SignUp=async(req,res)=>{
-        const { email, password } = req.body;
-        console.log(email,password)
+
+// Helper to validate degree duration
+const isValidDuration = (degree, startYear, endYear) => {
+    if (!startYear || !endYear) return true; // Skip if years are missing
+    
+    const start = parseInt(startYear);
+    const end = parseInt(endYear);
+    if (isNaN(start) || isNaN(end) || start >= end) return false;
+    
+    const duration = end - start;
+    const deg = (degree || "").toLowerCase();
+    
+    // Core duration rules
+    if (deg.includes("b.tech") || deg.includes("b.e") || deg.includes("bachelor of engineering") || deg.includes("bachelor of technology")) {
+        return duration === 4;
+    }
+    if (deg.includes("m.tech") || deg.includes("m.e") || deg.includes("mba") || deg.includes("m.sc") || deg.includes("ma") || deg.includes("m.com") || deg.includes("intermediate") || deg.includes("12th") || deg.includes("pu")) {
+        return duration === 2;
+    }
+    if (deg.includes("b.sc") || deg.includes("b.com") || deg.includes("bba") || deg.includes("bca") || deg.includes("ba")) {
+        return duration === 3;
+    }
+    if (deg.includes("phd") || deg.includes("doctorate")) {
+        return duration >= 3 && duration <= 7;
+    }
+    
+    // If degree is unknown or empty but years exist, assume standard 2-4
+    return duration >= 2 && duration <= 5;
+};
+
+const SignUp = async (req, res) => {
+    try {
+        const { email, password, firstName, lastName, phone, location, education, internships, skills, portfolioLinks } = req.body;
+        
+        console.log("Signup Request Body:", req.body);
+        console.log("Uploaded File:", req.file);
+
         //check if email or password is missing
         if (!email || !password) {
-            return res.status(400).json({ message: "all fields are required" });
+            return res.status(400).json({ message: "email and password are required" });
         }
     
         //check if user already exists
@@ -18,15 +52,66 @@ const SignUp=async(req,res)=>{
     
         //hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
-    
+        
+        // Handle path for uploaded resume
+        let resumeUrl = "";
+        if (req.file) {
+            resumeUrl = `/uploads/${req.file.filename}`;
+        }
+        
+        // Parse JSON strings back into arrays/objects (since FormData sends them as strings)
+        let parsedEducation = [];
+        let parsedInternships = [];
+        let parsedSkills = [];
+        let parsedPortfolio = {};
+
+        try {
+            if (education) parsedEducation = JSON.parse(education);
+            if (internships) parsedInternships = JSON.parse(internships);
+            if (skills) parsedSkills = JSON.parse(skills);
+            if (portfolioLinks) parsedPortfolio = JSON.parse(portfolioLinks);
+        } catch (err) {
+            console.error("Error parsing JSON fields:", err);
+            // Non-critical, we can continue or return error
+            // Allow them to be empty if JSON parsing fails
+        }
+
+        // Validate graduation duration if education is provided
+        if (parsedEducation.length > 0) {
+            const edu = parsedEducation[0];
+            if (!isValidDuration(edu.degree, edu.startYear, edu.endYear)) {
+                return res.status(400).json({ 
+                    message: `Invalid graduation duration. The difference between Start Year (${edu.startYear}) and End Year (${edu.endYear}) is not mathematically valid for the specified degree (${edu.degree || 'provided course'}).` 
+                });
+            }
+        }
+
         //saving into db
         const user = new User({
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            firstName,
+            lastName,
+            phone,
+            location,
+            education: parsedEducation,
+            internships: parsedInternships,
+            skills: parsedSkills,
+            resumeUrl,
+            portfolioLinks: parsedPortfolio,
+            preferences: req.body.preferences ? JSON.parse(req.body.preferences) : {
+                employmentType: 'Both',
+                locationType: 'Any'
+            }
         });
-        await user.save(); // <-- fixed missing parentheses
+        
+        await user.save();
     
-        res.status(201).json({ message: "user registered successfully" });
+        res.status(201).json({ message: "user registered successfully", user: { email: user.email, id: user._id } });
+    } catch (error) {
+        console.error("Signup Error:", error);
+        res.status(500).json({ message: "Internal server error during signup" });
+    }
 }
 
 

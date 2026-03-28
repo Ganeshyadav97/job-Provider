@@ -2,11 +2,15 @@ const User=require("../models/User");
 const bcrypt=require("bcryptjs");
 const Company=require('../models/Company')
 const CreateUser=async(req,res)=>{
-        const { email, password } = req.body;
-        console.log(email,password)
+    try {
+        const { email, password, firstName, lastName, phone, location, education, internships, skills, portfolioLinks } = req.body;
+        
+        console.log("Admin Create User Body:", req.body);
+        console.log("Uploaded File:", req.file);
+
         //check if email or password is missing
         if (!email || !password) {
-            return res.status(400).json({ message: "all fields are required" });
+            return res.status(400).json({ message: "email and password are required" });
         }
     
         //check if user already exists
@@ -17,15 +21,52 @@ const CreateUser=async(req,res)=>{
     
         //hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
-    
+        
+        // Handle path for uploaded resume
+        let resumeUrl = "";
+        if (req.file) {
+            resumeUrl = `/uploads/${req.file.filename}`;
+        }
+        
+        // Parse JSON strings back into arrays/objects (since FormData sends them as strings)
+        let parsedEducation = [];
+        let parsedInternships = [];
+        let parsedSkills = [];
+        let parsedPortfolio = {};
+
+        try {
+            if (education) parsedEducation = JSON.parse(education);
+            if (internships) parsedInternships = JSON.parse(internships);
+            if (skills) parsedSkills = JSON.parse(skills);
+            if (portfolioLinks) parsedPortfolio = JSON.parse(portfolioLinks);
+        } catch (err) {
+            console.error("Error parsing JSON fields:", err);
+            // Non-critical, we can continue or return error
+            // Allow them to be empty if JSON parsing fails
+        }
+
         //saving into db
         const user = new User({
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            firstName,
+            lastName,
+            phone,
+            location,
+            education: parsedEducation,
+            internships: parsedInternships,
+            skills: parsedSkills,
+            resumeUrl,
+            portfolioLinks: parsedPortfolio
         });
-        await user.save(); // <-- fixed missing parentheses
+        
+        await user.save();
     
-        res.status(201).json({ message: "user registered successfully" });
+        res.status(201).json({ message: "user registered successfully by admin", user: { email: user.email, id: user._id } });
+    } catch (error) {
+        console.error("Admin CreateUser Error:", error);
+        res.status(500).json({ message: "Internal server error during user creation" });
+    }
 }
 //update User
 //get data from params using findbyidandupdate we can update the user
@@ -58,12 +99,15 @@ const GetallUsers=async(req,res)=>{
     } */
 const CreateCompany = async (req, res) => {
   try {
-    const { name, email, password, location } = req.body;
+    const { 
+      name, email, password, location, 
+      industry, website, description, logoUrl, foundedYear, companySize 
+    } = req.body;
     console.log(email, password);
 
-    // Validate all fields
+    // Validate core fields
     if (!name || !email || !password || !location) {
-      return res.status(400).json({ message: "Provide all the details correctly" });
+      return res.status(400).json({ message: "Provide all the core details correctly (name, email, password, location)" });
     }
 
     // Check if company already exists
@@ -75,8 +119,11 @@ const CreateCompany = async (req, res) => {
     // Hash password
     const hashed = await bcrypt.hash(password, 10);
 
-    // Save company
-    const company = new Company({ name, email, password: hashed, location });
+    // Save company with extended fields
+    const company = new Company({ 
+      name, email, password: hashed, location,
+      industry, website, description, logoUrl, foundedYear, companySize
+    });
     await company.save();
 
     res.status(201).json({ message: "Company registered successfully" });

@@ -11,7 +11,7 @@ const JobDetails = () => {
   // Fetch all applications for this job
   const fetchApplications = async () => {
     try {
-      const res = await axios.get(`https://job-poster-1.onrender.com/company/getapplication/${id}`, {
+      const res = await axios.get(`http://localhost:5000/company/getapplication/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setApplications(res.data);
@@ -26,7 +26,7 @@ const JobDetails = () => {
   const updateStatus = async (appId, status) => {
     try {
       await axios.put(
-        `https://job-poster-1.onrender.com/company/status/${appId}`,
+        `http://localhost:5000/company/status/${appId}`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -92,35 +92,87 @@ const JobDetails = () => {
                   key={app._id}
                   className="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
                 >
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        Applicant: {app.user?.email || "N/A"}
+                      <h3 className="text-xl font-bold text-gray-800">
+                        {app.user?.firstName} {app.user?.lastName} <span className="text-sm font-normal text-gray-500">({app.user?.email})</span>
                       </h3>
-                      <p className="text-gray-600 mt-1">
-                        Status: <span className={`font-medium ${getStatusColor(app.status)}`}>
-                          {getStatusDisplay(app.status)}
-                        </span>
-                      </p>
+                      <div className="text-gray-600 mt-2 space-y-1 text-sm">
+                        <p><span className="font-semibold px-2">Phone:</span> {app.user?.phone || 'N/A'}</p>
+                        <p><span className="font-semibold px-2">Location:</span> {app.user?.location || 'N/A'}</p>
+                        <p>
+                          <span className="font-semibold px-2">Status:</span>
+                          <span className={`font-medium ${getStatusColor(app.status)}`}>
+                            {getStatusDisplay(app.status)}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Show buttons only for "Applied" status */}
+                    {!app.hideButtons && app.status && app.status.toLowerCase() === "applied" && (
+                      <div className="flex space-x-3 mt-4 md:mt-0">
+                        <button
+                          onClick={() => updateStatus(app._id, "Accepted")}
+                          className="bg-green-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors shadow-sm"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => updateStatus(app._id, "Rejected")}
+                          className="bg-red-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Deep Applicant Profile Output */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-200 pt-6">
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-2">Education</h4>
+                      {app.user?.education && app.user.education.length > 0 ? (
+                        <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
+                          {app.user.education.map((edu, idx) => (
+                            <li key={idx}>
+                              <strong>{edu.degree}</strong> in {edu.stream}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">No education listed</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-2">Technical Skills</h4>
+                      {app.user?.skills && app.user.skills.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {app.user.skills.map((skill, idx) => (
+                            <span key={idx} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">No skills listed</p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Show buttons only for "Applied" status (assuming that's pending) */}
-                  {!app.hideButtons && app.status && app.status.toLowerCase() === "applied" && (
-                    <div className="flex space-x-4 mt-4">
-                      <button
-                        onClick={() => updateStatus(app._id, "Accepted")}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => updateStatus(app._id, "Rejected")}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors duration-200"
-                      >
-                        Reject
-                      </button>
-                    </div>
+                  {app.user?.resumeUrl && (
+                     <div className="mt-6">
+                       <a 
+                          href={`http://localhost:5000${app.user.resumeUrl}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                       >
+                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                         Download Applicant Resume
+                       </a>
+                     </div>
                   )}
                 </div>
               ))}

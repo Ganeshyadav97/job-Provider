@@ -10,18 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.12.2",
+    "@tailwindcss/vite": "^4.1.14",
+    "axios": "^1.13.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-<<<<<<< HEAD
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.4",
-    "@tailwindcss/vite": "^4.1.14",
     "tailwindcss": "^4.1.14"
-=======
-    "@tailwindcss/vite": "^4.1.14",
-    "tailwindcss": "^4.1.14",
-    "react-router-dom": "^7.9.4"
->>>>>>> 080b6b7be41490bf9b91a47bb8c4a430405876cd
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
@@ -31,7 +26,6 @@
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
-    
     "globals": "^16.4.0",
     "vite": "npm:rolldown-vite@7.1.14"
   },

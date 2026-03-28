@@ -2,20 +2,115 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+// Helper to validate degree duration
+const isValidDuration = (degree, startYear, endYear) => {
+    if (!startYear || !endYear) return true; // Skip if years are missing
+    
+    const start = parseInt(startYear);
+    const end = parseInt(endYear);
+    if (isNaN(start) || isNaN(end) || start >= end) return false;
+    
+    const duration = end - start;
+    const deg = (degree || "").toLowerCase();
+    
+    // Core duration rules
+    if (deg.includes("b.tech") || deg.includes("b.e") || deg.includes("bachelor of engineering") || deg.includes("bachelor of technology")) {
+        return duration === 4;
+    }
+    if (deg.includes("m.tech") || deg.includes("m.e") || deg.includes("mba") || deg.includes("m.sc") || deg.includes("ma") || deg.includes("m.com") || deg.includes("intermediate") || deg.includes("12th") || deg.includes("pu")) {
+        return duration === 2;
+    }
+    if (deg.includes("b.sc") || deg.includes("b.com") || deg.includes("bba") || deg.includes("bca") || deg.includes("ba")) {
+        return duration === 3;
+    }
+    if (deg.includes("phd") || deg.includes("doctorate")) {
+        return duration >= 3 && duration <= 7;
+    }
+    
+    // If degree is unknown or empty but years exist, assume standard 2-4
+    return duration >= 2 && duration <= 5;
+};
+
 const SignUp = () => {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    phone: "",
+    degree: "",
+    stream: "",
+    startYear: "",
+    endYear: "",
+    skills: "",
+    github: "",
+    portfolio: ""
+  });
+  const [preferences, setPreferences] = useState({
+    employmentType: 'Both',
+    locationType: 'Any'
+  });
+  const [resume, setResume] = useState(null);
+  
   const [err, setErr] = useState("")
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleSignup = async () => {
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+    const handleSignup = async () => {
     setErr("")
+    
+    // Client-side validation: Degree duration check
+    if (formData.startYear && formData.endYear) {
+      if (!isValidDuration(formData.degree, formData.startYear, formData.endYear)) {
+          setErr(`Invalid graduation duration. The difference between Start Year (${formData.startYear}) and End Year (${formData.endYear}) is not mathematically valid for the specified degree (${formData.degree || 'provided course'}).`);
+          return;
+      }
+    }
+    
     setLoading(true)
     try {
-      await axios.post("https://job-poster-1.onrender.com/auth/user/signup", { email, password })
+      const data = new FormData();
+      // append basic info
+      Object.keys(formData).forEach(key => {
+        if (key !== 'degree' && key !== 'stream' && key !== 'skills' && key !== 'startYear' && key !== 'endYear') {
+          data.append(key, formData[key]);
+        }
+      });
+      
+      // format education
+      if (formData.degree || formData.stream || formData.startYear || formData.endYear) {
+        data.append("education", JSON.stringify([{ degree: formData.degree, stream: formData.stream, startYear: formData.startYear, endYear: formData.endYear }]));
+      }
+
+      // format skills
+      if (formData.skills) {
+        const skillArray = formData.skills.split(',').map(s => s.trim());
+        data.append("skills", JSON.stringify(skillArray));
+      }
+
+      // append file
+      if (resume) {
+        data.append("resume", resume);
+      }
+
+      // format portfolioLinks
+      data.append("portfolioLinks", JSON.stringify({
+        github: formData.github,
+        portfolio: formData.portfolio
+      }));
+
+      // append preferences
+      data.append("preferences", JSON.stringify(preferences));
+
+      await axios.post("http://localhost:5000/auth/user/signup", data, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      
       navigate('/login')
-      console.log(email, password)
     } catch (err) {
       setErr(err.response?.data?.message || "Sign up failed")
     } finally {
@@ -34,37 +129,117 @@ const SignUp = () => {
 
         {/* Form */}
         <div className="p-8">
-          <form onSubmit={(e) => { e.preventDefault(); handleSignup(); }} className="space-y-6">
-            {/* Email Input */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+          <form onSubmit={(e) => { e.preventDefault(); handleSignup(); }} className="space-y-4">
+            {/* Name Inputs */}
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <input name="firstName" type="text" onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <input name="lastName" type="text" onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
             </div>
 
-            {/* Password Input */}
+            {/* Email & Phone */}
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
+                <input name="email" type="email" required onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input name="phone" type="text" onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+            </div>
+
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password <span className="text-red-500">*</span></label>
+              <input name="password" type="password" required onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+            </div>
+
+            {/* Education Details */}
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Degree (e.g. B.Tech)</label>
+                <input name="degree" type="text" onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Stream (e.g. CS)</label>
+                <input name="stream" type="text" onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Year</label>
+                <input name="startYear" type="text" placeholder="e.g. 2020" onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Year (Graduation)</label>
+                <input name="endYear" type="text" placeholder="e.g. 2024" onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+            </div>
+
+            {/* Skills */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Skills (comma separated)</label>
+              <input name="skills" type="text" placeholder="React, Node.js, Python" onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+            </div>
+
+            {/* Research Links */}
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">GitHub Profile Link</label>
+                <input name="github" type="url" placeholder="https://github.com/..." onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+              <div className="w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Portfolio Link</label>
+                <input name="portfolio" type="url" placeholder="https://portfolio.com/..." onChange={handleInputChange} className="w-full border border-gray-300 p-2 rounded-lg" />
+              </div>
+            </div>
+
+            {/* Preferences */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-3">
+              <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <span className="material-icons-outlined text-base">settings</span>
+                Job Preferences
+              </h3>
+              <div className="flex gap-4 text-xs">
+                <div className="flex-1">
+                  <label className="block text-gray-500 mb-1">Employment</label>
+                  <select 
+                    value={preferences.employmentType}
+                    onChange={(e) => setPreferences({...preferences, employmentType: e.target.value})}
+                    className="w-full border-gray-200 rounded-md p-1.5 focus:ring-blue-500"
+                  >
+                    <option value="Both">Full-time & Intern</option>
+                    <option value="Full-time">Full-time Only</option>
+                    <option value="Internship">Internship Only</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-gray-500 mb-1">Location</label>
+                  <select 
+                    value={preferences.locationType}
+                    onChange={(e) => setPreferences({...preferences, locationType: e.target.value})}
+                    className="w-full border-gray-200 rounded-md p-1.5 focus:ring-blue-500"
+                  >
+                    <option value="Any">Any Location</option>
+                    <option value="Remote">Remote Only</option>
+                    <option value="Office">Office Only</option>
+                    <option value="Hybrid">Hybrid Only</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Resume Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Resume (PDF/Image)</label>
+              <input type="file" accept=".pdf,image/*" onChange={(e) => setResume(e.target.files[0])} className="w-full border border-gray-300 p-2 rounded-lg bg-gray-50" />
             </div>
 
             {/* Error Message */}
